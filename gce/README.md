@@ -48,11 +48,11 @@ $ gcloud secrets add-iam-policy-binding runner-secret \
 - Step 5: Create an instance template and use it to create the MIG.
 
 ```sh
-$ gcloud compute instance-templates create gh-runner-template \
-    --image-family=ubuntu-2204-lts \
+$ gcloud compute instance-templates create gh-runner-with-cleanup-template \
+    --image-family=ubuntu-2404-lts-amd64 \
     --image-project=ubuntu-os-cloud \
     --boot-disk-type=pd-standard \
-    --boot-disk-size=10GB \
+    --boot-disk-size=30GB \
     --machine-type=n2d-standard-2 \
     --provisioning-model=SPOT \
     --instance-termination-action=STOP \
@@ -60,10 +60,10 @@ $ gcloud compute instance-templates create gh-runner-template \
     --scopes=cloud-platform \
     --service-account=$SA_EMAIL \
     --metadata-from-file=startup-script=startup.sh,shutdown-script=shutdown.sh
-$ gcloud compute instance-groups managed create runner-group \
+$ gcloud compute instance-groups managed create runner-with-cleanup-group \
     --size=1 \
     --base-instance-name=gce-runner \
-    --template=gh-runner-template \
+    --template=gh-runner-with-cleanup-template \
     --zone=us-central1-f \
     --update-policy-minimal-action=restart \
     --update-policy-most-disruptive-action=replace \
