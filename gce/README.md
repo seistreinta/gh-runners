@@ -9,11 +9,11 @@ This example showcases how to deploy GitHub Actions Self Hosted Runners on MIGs 
 - Step 1: Set the required environment variables.
 
 ```sh
-$ export PROJECT_ID=foo
+$ export PROJECT_ID=devops
 $ export GITHUB_TOKEN=foo
-$ export REPO_OWNER=foo
-$ export REPO_NAME=foo
-$ export REPO_URL=foo
+$ export REPO_OWNER=seistreinta
+$ export REPO_NAME=tepache-backend-framework
+$ export REPO_URL=https://github.com/seistreinta
 ```
 
 - Step 2: Enable the required GCP APIs.
@@ -48,18 +48,25 @@ $ gcloud secrets add-iam-policy-binding runner-secret \
 - Step 5: Create an instance template and use it to create the MIG.
 
 ```sh
-$ gcloud compute instance-templates create gh-runner-template \
-    --image-family=ubuntu-1804-lts \
+$ gcloud compute instance-templates create gh-runner-with-cleanup-template \
+    --image-family=ubuntu-2404-lts-amd64 \
     --image-project=ubuntu-os-cloud \
-    --boot-disk-type=pd-ssd \
-    --boot-disk-size=10GB \
-    --machine-type=n1-standard-4 \
+    --boot-disk-type=pd-standard \
+    --boot-disk-size=30GB \
+    --machine-type=n2d-standard-2 \
+    --provisioning-model=SPOT \
+    --instance-termination-action=STOP \
+    --restart-on-failure \
     --scopes=cloud-platform \
     --service-account=$SA_EMAIL \
     --metadata-from-file=startup-script=startup.sh,shutdown-script=shutdown.sh
-$ gcloud compute instance-groups managed create runner-group \
-    --size=3 \
+$ gcloud compute instance-groups managed create runner-with-cleanup-group \
+    --size=1 \
     --base-instance-name=gce-runner \
-    --template=gh-runner-template \
-    --zone=us-central1-a
+    --template=gh-runner-with-cleanup-template \
+    --zone=us-central1-f \
+    --update-policy-minimal-action=restart \
+    --update-policy-most-disruptive-action=replace \
+    --update-policy-replacement-method=substitute \
+    --update-policy-type=proactive
 ```

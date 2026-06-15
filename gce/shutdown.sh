@@ -14,6 +14,7 @@
 # limitations under the License.
 
 # access secret from secretsmanager
+echo "Setting secrets..."
 secrets=$(gcloud secrets versions access latest --secret="runner-secret")
 # set secrets as env vars
 # shellcheck disable=SC2206
@@ -21,9 +22,13 @@ secretsConfig=($secrets)
 for var in "${secretsConfig[@]}"; do
 export "${var?}"
 done
+
 #stop and uninstall the runner service
+echo "Stopping and uninstalling the runner service..."
 cd /runner || exit
 ./svc.sh stop
 ./svc.sh uninstall
 #remove the runner configuration
-RUNNER_ALLOW_RUNASROOT=1  /runner/config.sh remove --unattended --token "$(curl -sS --request POST --url "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runners/remove-token" --header "authorization: Bearer ${GITHUB_TOKEN}"  --header "content-type: application/json" | jq -r .token)"
+RUNNER_ALLOW_RUNASROOT=1  /runner/config.sh remove --unattended --token "$(curl -sS --request POST --url "https://api.github.com/orgs/${REPO_OWNER}/actions/runners/remove-token" --header "authorization: Bearer ${GITHUB_TOKEN}"  --header "content-type: application/json" | jq -r .token)"
+
+echo "Shutdown script finished."

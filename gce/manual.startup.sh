@@ -22,13 +22,10 @@ apt-get -y install nano
 
 # access secret from secretsmanager
 echo "Setting secrets..."
-secrets=$(gcloud secrets versions access latest --secret="runner-secret")
-# set secrets as env vars
-# shellcheck disable=SC2206
-secretsConfig=($secrets)
-for var in "${secretsConfig[@]}"; do
-export "${var?}"
-done
+export REPO_NAME=tepache-backend-framework
+export REPO_OWNER=seistreinta
+export GITHUB_TOKEN= # replace with your token
+export REPO_URL=https://github.com/seistreinta
 # github runner version
 export GH_RUNNER_VERSION="2.327.1"
 
@@ -51,55 +48,5 @@ RUNNER_ALLOW_RUNASROOT=1 /runner/config.sh --unattended --replace --work "/runne
 cd /runner || exit
 ./svc.sh install
 ./svc.sh start
-
-# Create the cleanup script
-# The 'runner_cleanup.sh' script is written directly into a file.
-echo "Creating the runner_cleanup.sh script..."
-
-# This uses a 'cat' command to write the script to a file.
-sudo cat << 'EOF' > /usr/local/bin/runner_cleanup.sh
-#!/bin/bash
-
-# Adjust this path to match your runner's installation directory.
-RUNNER_DIR="/runner-tmp"
-
-echo "Starting daily runner cleanup at $(date)"
-
-# Clean up Docker system
-echo "Cleaning up Docker system..."
-sudo docker system prune --all --force --volumes
-
-# Clear package manager caches
-if command -v apt-get &> /dev/null
-then
-    echo "Cleaning up APT cache..."
-    sudo apt-get clean
-fi
-
-# Remove temporary files
-echo "Cleaning up temporary files..."
-sudo rm -rf /tmp/*
-sudo rm -rf /var/tmp/*
-
-# Clean up runner work directories
-echo "Cleaning up runner work directories..."
-if [ -d "$RUNNER_DIR" ]; then
-  find "$RUNNER_DIR" -mindepth 1 -maxdepth 1 -exec sudo rm -rf {} +
-fi
-
-echo "Daily cleanup finished."
-EOF
-
-# Make the script executable
-sudo chmod +x /usr/local/bin/runner_cleanup.sh
-
-# --- 3. Add the cron job ---
-# This adds a daily cron job for the cleanup script.
-echo "Adding a daily cron job for the cleanup script..."
-
-# Use 'crontab -l' to get the existing crontab, then add the new line.
-# This prevents overwriting any existing cron jobs.
-# The `(crontab -l 2>/dev/null; echo "...")` command is the standard way to do this.
-(sudo crontab -l 2>/dev/null; echo "0 3 * * * /usr/local/bin/runner_cleanup.sh >> /var/log/runner_cleanup.log 2>&1") | sudo crontab -
 
 echo "Startup script finished."
